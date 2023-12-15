@@ -40,9 +40,16 @@ case "$action" in
 		release="$(get "releases/tags/$tag" | jq -r '.id' || true)"
 		[ ! "$release" ] || delete "releases/$release"
 
+		if [[ $tag == latest ]]; then
+			make_latest=false
+		else
+			make_latest=true
+		fi
+
 		release="$(post "releases" '{
 			"tag_name": "'"$tag"'",
 			"name": "'"$name"'",
+			"make_latest": "'"$make_latest"'",
 			"body": ":penguin: :building_construction:"
 		}' | jq -r '.id')"
 
