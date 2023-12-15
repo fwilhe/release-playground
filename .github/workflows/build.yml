@@ -7,8 +7,8 @@ on:
         required: false
         type: choice
         options:
-          - major
           - minor
+          - major
 jobs:
   build:
     runs-on: ubuntu-latest
