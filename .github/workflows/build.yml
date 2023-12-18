@@ -25,11 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event.inputs.component == ''
     steps:
       - uses: actions/checkout@v3
       - name: tag latest
-        if: github.event.inputs.component == ''
         run: |
           git tag --force latest
           git push --force origin latest
@@ -37,27 +36,36 @@ jobs:
         with:
           name: build
           path: download
-      - run: echo Version Component to Increase is ${{ github.event.inputs.component }}
       - name: create release (latest)
-        if: github.event.inputs.component == ''
         run: |
           release="$(.github/workflows/release.sh ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} create latest "Builder (latest)")"
           .github/workflows/release.sh ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} upload "$release" download/build
+
+  release-semver:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event.inputs.component != ''
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v3
+        with:
+          name: build
+          path: download
+      - run: echo Version Component to Increase is ${{ github.event.inputs.component }}
       - name: Get Version Number
-        if: github.event.inputs.component != ''
-        uses: gardenlinux/bump-version@main
+        run: .github/workflows/bump.py
         id: bump
         with:
           component: ${{ github.event.inputs.component }}
       - run: echo New version number ${{ steps.bump.outputs.newVersion }}
-        if: github.event.inputs.component != ''
       - name: tag version
-        if: github.event.inputs.component != ''
         run: |
           git tag ${{ steps.bump.outputs.newVersion }}
           git push origin ${{ steps.bump.outputs.newVersion }}
       - name: create release (semantic)
-        if: github.event.inputs.component != ''
         run: |
           release="$(.github/workflows/release.sh ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} create ${{ steps.bump.outputs.newVersion }} "Builder (${{ steps.bump.outputs.newVersion }})")"
           .github/workflows/release.sh ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} upload "$release" download/build
