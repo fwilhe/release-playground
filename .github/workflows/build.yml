@@ -56,10 +56,8 @@ jobs:
           path: download
       - run: echo Version Component to Increase is ${{ github.event.inputs.component }}
       - name: Get Version Number
-        run: .github/workflows/bump.py
+        run: .github/workflows/bump.py ${{ github.event.inputs.component }}
         id: bump
-        with:
-          component: ${{ github.event.inputs.component }}
       - run: echo New version number ${{ steps.bump.outputs.newVersion }}
       - name: tag version
         run: |
